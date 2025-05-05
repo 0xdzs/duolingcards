@@ -167,17 +167,14 @@ const DeckDetailPage: React.FC = () => {
             <div key={card.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="grid md:grid-cols-2 divide-x divide-gray-100">
                 <div className="p-6">
-                <div className="p-6">
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Front</h3>
                   <p className="text-lg">{card.front}</p>
                 </div>
-                
                 <div className="p-6 bg-gray-50">
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Back</h3>
                   <p className="text-lg">{card.back}</p>
                 </div>
               </div>
-              
               <div className="bg-gray-100 px-6 py-2 flex justify-end">
                 <button
                   onClick={() => handleDeleteCard(card.id)}

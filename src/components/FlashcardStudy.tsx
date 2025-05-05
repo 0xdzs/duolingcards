@@ -45,53 +45,6 @@ const FlashcardStudy: React.FC<FlashcardStudyProps> = ({ cards, onClose }) => {
 
   if (shuffledCards.length === 0) {
     return (
-      <div className="text-center p-<pivotalAction type="file" filePath="src/components/FlashcardStudy.tsx">import React, { useState, useEffect } from 'react';
-import { Card } from '../types';
-import ReactCardFlip from 'react-card-flip';
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
-
-interface FlashcardStudyProps {
-  cards: Card[];
-  onClose: () => void;
-}
-
-const FlashcardStudy: React.FC<FlashcardStudyProps> = ({ cards, onClose }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [shuffledCards, setShuffledCards] = useState<Card[]>([]);
-
-  useEffect(() => {
-    // Initialize with shuffled cards
-    shuffleCards();
-  }, [cards]);
-
-  const shuffleCards = () => {
-    const shuffled = [...cards].sort(() => Math.random() - 0.5);
-    setShuffledCards(shuffled);
-    setCurrentIndex(0);
-    setIsFlipped(false);
-  };
-
-  const handleCardClick = () => {
-    setIsFlipped(!isFlipped);
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setIsFlipped(false);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentIndex < shuffledCards.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsFlipped(false);
-    }
-  };
-
-  if (shuffledCards.length === 0) {
-    return (
       <div className="text-center p-8 bg-white rounded-lg shadow-md">
         <p className="text-lg mb-4">No cards available to study.</p>
         <button
