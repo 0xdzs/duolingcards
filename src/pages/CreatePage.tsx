@@ -19,6 +19,7 @@ const CreatePage: React.FC = () => {
   const [deckName, setDeckName] = useState('');
   const [deckDescription, setDeckDescription] = useState('');
   const [language, setLanguage] = useState('Spanish');
+  const [translationLanguage, setTranslationLanguage] = useState('English');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [ocrResult, setOcrResult] = useState('');
   const [processedCards, setProcessedCards] = useState<ProcessedCard[]>([]);
@@ -38,7 +39,7 @@ const CreatePage: React.FC = () => {
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!deckName.trim() || !language.trim()) {
+    if (!deckName.trim() || !language.trim() || !translationLanguage.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -49,7 +50,8 @@ const CreatePage: React.FC = () => {
       const newDeck = await createDeck({
         name: deckName,
         description: deckDescription,
-        language: language
+        language: language,
+        translation_language: translationLanguage
       });
       
       if (newDeck) {
@@ -80,7 +82,7 @@ const CreatePage: React.FC = () => {
         setOcrResult(result.text);
         
         // Process with AI
-        const cards = await processWithAI(result.text, language);
+        const cards = await processWithAI(result.text, language, translationLanguage);
         
         if (cards && cards.length > 0) {
           setProcessedCards(cards);
@@ -203,7 +205,7 @@ const CreatePage: React.FC = () => {
             
             <div>
               <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
-                Language *
+                Language to Learn *
               </label>
               <select
                 id="language"
@@ -212,6 +214,31 @@ const CreatePage: React.FC = () => {
                 required
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Italian">Italian</option>
+                <option value="Portuguese">Portuguese</option>
+                <option value="Dutch">Dutch</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Korean">Korean</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Russian">Russian</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="translationLanguage" className="block text-sm font-medium text-gray-700 mb-1">
+                Translation *
+              </label>
+              <select
+                id="translationLanguage"
+                value={translationLanguage}
+                onChange={(e) => setTranslationLanguage(e.target.value)}
+                required
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="English">English</option>
                 <option value="Spanish">Spanish</option>
                 <option value="French">French</option>
                 <option value="German">German</option>

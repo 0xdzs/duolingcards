@@ -43,7 +43,9 @@ export const getDecks = async (): Promise<Deck[]> => {
     
     return data.map(deck => ({
       ...deck,
-      card_count: deck.card_count as unknown as number
+      card_count: typeof deck.card_count === 'object' && deck.card_count !== null
+        ? deck.card_count.count
+        : deck.card_count || 0
     }));
   } catch (error: any) {
     toast.error(error.message || 'Failed to fetch decks');
@@ -67,7 +69,9 @@ export const getDeckById = async (id: string): Promise<Deck | null> => {
     
     return {
       ...data,
-      card_count: data.card_count as unknown as number
+      card_count: typeof data.card_count === 'object' && data.card_count !== null
+        ? data.card_count.count
+        : data.card_count || 0
     };
   } catch (error: any) {
     toast.error(error.message || 'Failed to fetch deck');

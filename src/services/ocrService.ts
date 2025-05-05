@@ -20,69 +20,84 @@ export const performOCR = async (imageFile: File): Promise<OCRResult | null> => 
   }
 };
 
-export const processWithAI = async (ocrText: string, language: string): Promise<ProcessedCard[] | null> => {
+export const processWithAI = async (ocrText: string, language: string, translationLanguage: string): Promise<ProcessedCard[] | null> => {
   try {
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-    
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('OpenRouter API key is missing');
+      throw new Error('Google Gemini API key is missing');
     }
-    
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+    const prompt = `
+You are a language learning assistant that extracts vocabulary from Duolingo screenshots.
+Extract word pairs from the OCR text and format them as flashcards.
+The target language is ${language}.
+The translation language is ${translationLanguage}.
+Extract vocabulary pairs from this Duolingo screenshot OCR text and format them as flashcards.
+Return ONLY a JSON array of objects with 'front' (word in ${language}) and 'back' (translation in ${translationLanguage}) properties.
+OCR Text: ${ocrText}
+`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'google/gemini-pro',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a language learning assistant that extracts vocabulary from Duolingo screenshots. 
-                     Extract word pairs from the OCR text and format them as flashcards.
-                     The target language is ${language}.`
-          },
-          {
-            role: 'user',
-            content: `Extract vocabulary pairs from this Duolingo screenshot OCR text and format them as flashcards. 
-                     Return ONLY a JSON array of objects with 'front' (word in ${language}) and 'back' (translation) properties.
-                     OCR Text: ${ocrText}`
-          }
-        ],
-        max_tokens: 1000
+        contents: [{ parts: [{ text: prompt }] }]
       })
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to process with AI');
-    }
-    
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-    
-    // Extract JSON from the response
-    const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/) || 
-                      aiResponse.match(/```\n([\s\S]*?)\n```/) ||
-                      [null, aiResponse];
-    
-    const jsonContent = jsonMatch[1] || aiResponse;
-    
+
+    const text = await response.text();
+    let data;
     try {
-      const cards = JSON.parse(jsonContent);
-      if (Array.isArray(cards) && cards.length > 0) {
-        return cards;
-      } else {
-        throw new Error('Invalid card format returned');
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Gemini API did not return JSON:', text);
+      throw new Error('Gemini API did not return valid JSON. Raw response: ' + text);
+    }
+
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || data?.error || text;
+      console.error('Gemini API error:', errorMsg);
+      throw new Error(`Gemini API error: ${errorMsg}`);
+    }
+
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!aiResponse) throw new Error('No response from Gemini API');
+
+    // Try to extract JSON from code block or plain text
+    let jsonContent = aiResponse;
+    const codeBlockMatch = aiResponse.match(/```(?:json)?\n?([\s\S]*?)\n?```/i);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      jsonContent = codeBlockMatch[1];
+    }
+
+    // Check if jsonContent looks like JSON (starts with [ or {)
+    const isLikelyJson = jsonContent.trim().startsWith('[') || jsonContent.trim().startsWith('{');
+
+    let cards;
+    if (isLikelyJson) {
+      try {
+        cards = JSON.parse(jsonContent);
+      } catch (parseError) {
+        console.error('Error parsing Gemini response:', parseError, jsonContent);
+        throw new Error('Failed to parse Gemini response. Raw response: ' + aiResponse);
       }
-    } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      throw new Error('Failed to parse AI response');
+    } else {
+      // Not JSON, so show the Gemini message as an error
+      throw new Error('Gemini could not extract flashcards: ' + aiResponse);
+    }
+
+    if (Array.isArray(cards) && cards.length > 0) {
+      return cards;
+    } else {
+      throw new Error('Invalid card format returned by Gemini. Raw response: ' + aiResponse);
     }
   } catch (error: any) {
-    console.error('AI processing error:', error);
-    toast.error(error.message || 'Failed to process with AI');
+    console.error('Gemini processing error:', error);
+    toast.error(error.message || 'Failed to process with Gemini');
     return null;
   }
 };

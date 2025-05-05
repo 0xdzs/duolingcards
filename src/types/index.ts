@@ -8,6 +8,7 @@ export interface Deck {
   name: string;
   description: string;
   language: string;
+  translation_language: string;
   user_id: string;
   created_at: string;
   updated_at: string;
